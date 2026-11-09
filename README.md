@@ -1,13 +1,11 @@
 # StockFlow MVP – SaaS Inventory Management System
 
-> **Assessment Submission for Wexa AI**  
-> Built strictly adhering to the *Phase 1 – 6-Hour MVP PRD (Scope-Reduced)*.
 
 StockFlow is a multi-tenant SaaS inventory management web application where business owners can manage product catalogs, monitor inventory quantities, receive real-time low-stock alerts, and configure organization-wide stock thresholds—all with strict multi-tenant data isolation.
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 * **Frontend:** React (Vite SPA), Tailwind CSS, Lucide React
 * **Backend:** Node.js, Express.js (REST API)
@@ -16,7 +14,7 @@ StockFlow is a multi-tenant SaaS inventory management web application where busi
 
 ---
 
-## ✨ Core Features & PRD Mapping
+##  Core Features & PRD Mapping
 
 1. **Authentication & Multi-Tenant Scoping (FR-1, FR-2):**
    * Tenant signup creates an `Organization` record and owner `User` account.
@@ -35,7 +33,7 @@ StockFlow is a multi-tenant SaaS inventory management web application where busi
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```text
 ├── package.json              # Monorepo scripts (concurrently dev orchestration)
@@ -67,7 +65,7 @@ StockFlow is a multi-tenant SaaS inventory management web application where busi
 
 ---
 
-## 🚀 Quick Start Guide
+##  Quick Start Guide
 
 ### 1. Prerequisites
 * Node.js v18+ or v20+
@@ -113,7 +111,7 @@ npm run seed
 
 ---
 
-## 🔒 Multi-Tenant Security & Isolation
+##  Multi-Tenant Security & Isolation
 * Every product record carries an indexed `organizationId` foreign reference.
 * SKU uniqueness is enforced per organization using a compound index: `{ organizationId: 1, sku: 1 }`.
 * All API queries, mutations, and deletions require a validated JWT and enforce `{ organizationId: req.organizationId }` at the query level.
