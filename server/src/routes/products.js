@@ -238,6 +238,54 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// POST /api/products/:id/adjust-stock (FR-5: Quick stock delta +/- N)
+router.post('/:id/adjust-stock', async (req, res) => {
+  try {
+    const { delta, note } = req.body;
+
+    const parsedDelta = parseInt(delta, 10);
+    if (isNaN(parsedDelta) || parsedDelta === 0) {
+      return res.status(400).json({ message: 'Delta must be a non-zero integer (e.g. +5 or -2).' });
+    }
+
+    const product = await Product.findOne({
+      _id: req.params.id,
+      organizationId: req.organizationId,
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found.' });
+    }
+
+    const newQuantity = product.quantityOnHand + parsedDelta;
+    if (newQuantity < 0) {
+      return res.status(400).json({
+        message: `Cannot adjust stock: current stock is ${product.quantityOnHand}, adjustment of ${parsedDelta} would result in negative quantity.`,
+      });
+    }
+
+    product.quantityOnHand = newQuantity;
+    product.lastUpdatedBy = `${req.user.email}${note ? ` (Note: ${note.trim()})` : ''}`;
+    await product.save();
+
+    const defaultThreshold = req.organization?.defaultLowStockThreshold ?? 5;
+    const isLowStock = checkIsLowStock(product, defaultThreshold);
+
+    return res.json({
+      message: `Stock adjusted by ${parsedDelta > 0 ? `+${parsedDelta}` : parsedDelta} units. New quantity: ${newQuantity}.`,
+      product: {
+        ...product.toObject(),
+        effectiveThreshold:
+          product.lowStockThreshold !== null ? product.lowStockThreshold : defaultThreshold,
+        isLowStock,
+      },
+    });
+  } catch (err) {
+    console.error('Stock adjustment error:', err);
+    return res.status(500).json({ message: 'Failed to adjust stock.' });
+  }
+});
+
 // DELETE /api/products/:id (Delete product scoped to tenant)
 router.delete('/:id', async (req, res) => {
   try {
