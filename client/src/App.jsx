@@ -7,19 +7,21 @@ import AdjustStockModal from './components/AdjustStockModal';
 import ConfirmDeleteModal from './components/ConfirmDeleteModal';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
+import Settings from './pages/Settings';
 import { Loader2 } from 'lucide-react';
 
 function MainApp() {
   const { isAuthenticated, loading } = useAuth();
   const [authView, setAuthView] = useState('login'); // 'login' | 'signup'
-  const [activeTab, setActiveTab] = useState('products');
+  const [activeTab, setActiveTab] = useState('dashboard'); // FR-6: User lands on dashboard after login
   const [toast, setToast] = useState(null);
 
   // Modal states for Stock Adjustment and Delete Confirmation
   const [adjustingProduct, setAdjustingProduct] = useState(null);
   const [deletingProduct, setDeletingProduct] = useState(null);
-  const [refreshProductsTrigger, setRefreshProductsTrigger] = useState(null);
+  const [refreshCallback, setRefreshCallback] = useState(null);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -28,26 +30,26 @@ function MainApp() {
     }, 3500);
   };
 
-  const handleOpenAdjustStock = (product, refreshCallback) => {
+  const handleOpenAdjustStock = (product, onCompleteRefresh) => {
     setAdjustingProduct(product);
-    setRefreshProductsTrigger(() => refreshCallback);
+    setRefreshCallback(() => onCompleteRefresh);
   };
 
   const handleConfirmAdjustStock = async (id, delta, note) => {
     const res = await api.adjustStock(id, delta, note);
     showToast(res.message || 'Stock adjusted successfully.', 'success');
-    if (refreshProductsTrigger) refreshProductsTrigger();
+    if (refreshCallback) refreshCallback();
   };
 
-  const handleOpenDeleteConfirm = (product, refreshCallback) => {
+  const handleOpenDeleteConfirm = (product, onCompleteRefresh) => {
     setDeletingProduct(product);
-    setRefreshProductsTrigger(() => refreshCallback);
+    setRefreshCallback(() => onCompleteRefresh);
   };
 
   const handleConfirmDelete = async (id) => {
     const res = await api.deleteProduct(id);
     showToast(res.message || 'Product deleted successfully.', 'success');
-    if (refreshProductsTrigger) refreshProductsTrigger();
+    if (refreshCallback) refreshCallback();
   };
 
   if (loading) {
@@ -70,9 +72,17 @@ function MainApp() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 antialiased selection:bg-indigo-100 selection:text-indigo-900">
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
+
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeTab === 'dashboard' && (
+          <Dashboard
+            onNavigateToProducts={() => setActiveTab('products')}
+            onOpenAdjustStock={handleOpenAdjustStock}
+          />
+        )}
+
         {activeTab === 'products' && (
           <Products
             onOpenAdjustStock={handleOpenAdjustStock}
@@ -81,13 +91,8 @@ function MainApp() {
           />
         )}
 
-        {activeTab !== 'products' && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-sm">
-            <h2 className="text-xl font-bold text-slate-900 capitalize">{activeTab} View</h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Active in the upcoming commit. Switch back to Products to test live inventory!
-            </p>
-          </div>
+        {activeTab === 'settings' && (
+          <Settings toastMessage={showToast} />
         )}
       </main>
 
