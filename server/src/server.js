@@ -1,14 +1,17 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const { connectDB } = require('./config/db');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Base health check endpoint
+// Base health check
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -17,6 +20,23 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`StockFlow Server listening on http://localhost:${PORT}`);
+// Authentication routes
+app.use('/api/auth', authRoutes);
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled server error:', err);
+  res.status(500).json({
+    message: err.message || 'Internal Server Error',
+  });
 });
+
+// Start Server & Connect Database
+const startServer = async () => {
+  await connectDB();
+  app.listen(PORT, () => {
+    console.log(`StockFlow Server listening on http://localhost:${PORT}`);
+  });
+};
+
+startServer();
