@@ -81,14 +81,26 @@ npm --prefix server install
 npm --prefix client install
 ```
 
-### 3. Run Development Servers
+### 3. Environment Configuration
+Copy the template to create your local `.env`:
+```bash
+cp server/.env.example server/.env
+```
+* **Zero-Setup Mode:** If `MONGODB_URI` is left blank, the app will automatically spin up an in-memory MongoDB instance.
+* **MongoDB Atlas Cloud:** Set `MONGODB_URI` to your Atlas cluster connection string:
+  ```env
+  MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.abcde.mongodb.net/stockflow?retryWrites=true&w=majority
+  ```
+  *(Note: URL-encode any special characters in the password, e.g. `@` as `%40`).*
+
+### 4. Run Development Servers
 Start both the Express API (`http://localhost:5000`) and the React UI (`http://localhost:5173`) concurrently in a single command:
 ```bash
 npm run dev
 ```
 
-### 4. Optional: Seed Demo Accounts
-To populate two isolated organizations for testing:
+### 5. Seed Demo Accounts
+To populate isolated organizations for testing:
 ```bash
 npm run seed
 ```
