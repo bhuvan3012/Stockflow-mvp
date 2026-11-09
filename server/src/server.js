@@ -5,6 +5,8 @@ const { connectDB } = require('./config/db');
 
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
+const dashboardRoutes = require('./routes/dashboard');
+const settingsRoutes = require('./routes/settings');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -27,6 +29,12 @@ app.use('/api/auth', authRoutes);
 
 // Product inventory routes
 app.use('/api/products', productRoutes);
+
+// Dashboard metrics routes
+app.use('/api/dashboard', dashboardRoutes);
+
+// Settings routes
+app.use('/api/settings', settingsRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
