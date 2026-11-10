@@ -12,6 +12,7 @@ import {
   Loader2,
   Building2,
   Sparkles,
+  DollarSign,
 } from 'lucide-react';
 
 export default function Dashboard({ onNavigateToProducts, onOpenAdjustStock }) {
@@ -74,8 +75,8 @@ export default function Dashboard({ onNavigateToProducts, onOpenAdjustStock }) {
         </button>
       </div>
 
-      {/* 3 Summary Stat Cards (FR-6) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      {/* Executive Summary Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
           title="Total Products"
           value={stats.totalProducts}
@@ -85,11 +86,11 @@ export default function Dashboard({ onNavigateToProducts, onOpenAdjustStock }) {
         />
 
         <StatCard
-          title="Total Quantity on Hand"
+          title="Units on Hand"
           value={stats.totalQuantity.toLocaleString()}
           icon={Layers}
-          color="emerald"
-          subtext="Total units across all items"
+          color="indigo"
+          subtext="Total units in inventory"
         />
 
         <StatCard
@@ -103,6 +104,14 @@ export default function Dashboard({ onNavigateToProducts, onOpenAdjustStock }) {
               ? 'Units at or below threshold'
               : 'All inventory levels healthy'
           }
+        />
+
+        <StatCard
+          title="Inventory Valuation"
+          value={`$${(stats.totalValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          icon={DollarSign}
+          color="emerald"
+          subtext={stats.totalCost ? `Total Cost: $${stats.totalCost.toLocaleString()}` : 'Retail inventory value'}
         />
       </div>
 

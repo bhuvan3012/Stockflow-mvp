@@ -12,7 +12,8 @@ import {
   Trash2,
   SlidersHorizontal,
   Loader2,
-  Tag,
+  Download,
+  Filter,
 } from 'lucide-react';
 
 export default function Products({ onOpenAdjustStock, onOpenDeleteConfirm, toastMessage }) {
@@ -20,6 +21,7 @@ export default function Products({ onOpenAdjustStock, onOpenDeleteConfirm, toast
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'low' | 'out'
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
@@ -63,6 +65,47 @@ export default function Products({ onOpenAdjustStock, onOpenDeleteConfirm, toast
     setModalOpen(true);
   };
 
+  // Filter products by status tab
+  const filteredProducts = products.filter((p) => {
+    if (statusFilter === 'low') return p.isLowStock && p.quantityOnHand > 0;
+    if (statusFilter === 'out') return p.quantityOnHand === 0;
+    return true;
+  });
+
+  const lowStockCount = products.filter((p) => p.isLowStock && p.quantityOnHand > 0).length;
+  const outOfStockCount = products.filter((p) => p.quantityOnHand === 0).length;
+
+  // Export to CSV
+  const handleExportCSV = () => {
+    if (products.length === 0) {
+      toastMessage('No products available to export.', 'error');
+      return;
+    }
+
+    const headers = ['Product Name', 'SKU', 'Quantity on Hand', 'Status', 'Selling Price ($)', 'Cost Price ($)', 'Low Stock Threshold', 'Description'];
+    const rows = filteredProducts.map((p) => [
+      `"${p.name.replace(/"/g, '""')}"`,
+      `"${p.sku}"`,
+      p.quantityOnHand,
+      p.quantityOnHand === 0 ? 'Out of Stock' : p.isLowStock ? 'Low Stock' : 'Healthy',
+      p.sellingPrice !== null && p.sellingPrice !== undefined ? p.sellingPrice.toFixed(2) : '',
+      p.costPrice !== null && p.costPrice !== undefined ? p.costPrice.toFixed(2) : '',
+      p.effectiveThreshold ?? '',
+      `"${(p.description || '').replace(/"/g, '""')}"`,
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `stockflow-inventory-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toastMessage('Inventory exported to CSV successfully.', 'success');
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Header */}
@@ -73,17 +116,28 @@ export default function Products({ onOpenAdjustStock, onOpenDeleteConfirm, toast
             Manage your inventory items, pricing, and stock status
           </p>
         </div>
-        <button
-          onClick={handleOpenAdd}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-100 transition-all cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          Add Product
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={handleExportCSV}
+            title="Download CSV Spreadsheet"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-xl border border-slate-200 shadow-sm transition-all cursor-pointer"
+          >
+            <Download className="w-4 h-4 text-slate-500" />
+            <span>Export CSV</span>
+          </button>
+          <button
+            onClick={handleOpenAdd}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-100 transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Add Product
+          </button>
+        </div>
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center gap-4">
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        {/* Search Input */}
         <div className="relative flex-1 w-full">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
             <Search className="w-4 h-4" />
@@ -96,8 +150,40 @@ export default function Products({ onOpenAdjustStock, onOpenDeleteConfirm, toast
             className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all text-slate-900 placeholder:text-slate-400"
           />
         </div>
-        <div className="text-xs font-semibold text-slate-500 whitespace-nowrap">
-          {products.length} {products.length === 1 ? 'product' : 'products'} found
+
+        {/* Status Filter Tabs */}
+        <div className="flex items-center gap-1.5 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+          <button
+            onClick={() => setStatusFilter('all')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+              statusFilter === 'all'
+                ? 'bg-slate-900 text-white shadow-sm'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            All ({products.length})
+          </button>
+          <button
+            onClick={() => setStatusFilter('low')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+              statusFilter === 'low'
+                ? 'bg-amber-500 text-white shadow-sm'
+                : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200'
+            }`}
+          >
+            <AlertTriangle className="w-3.5 h-3.5" />
+            Low Stock ({lowStockCount})
+          </button>
+          <button
+            onClick={() => setStatusFilter('out')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+              statusFilter === 'out'
+                ? 'bg-rose-600 text-white shadow-sm'
+                : 'bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200'
+            }`}
+          >
+            Out of Stock ({outOfStockCount})
+          </button>
         </div>
       </div>
 
@@ -108,7 +194,7 @@ export default function Products({ onOpenAdjustStock, onOpenDeleteConfirm, toast
             <Loader2 className="w-7 h-7 animate-spin text-indigo-600" />
             <span className="text-sm">Loading catalog...</span>
           </div>
-        ) : products.length === 0 ? (
+        ) : filteredProducts.length === 0 ? (
           <div className="py-16 px-4 text-center">
             <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
               <Package className="w-6 h-6" />
@@ -116,10 +202,20 @@ export default function Products({ onOpenAdjustStock, onOpenDeleteConfirm, toast
             <h3 className="text-base font-semibold text-slate-900">No products found</h3>
             <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
               {search
-                ? `No products matched "${search}". Try searching with a different SKU or name.`
+                ? `No products matched "${search}".`
+                : statusFilter !== 'all'
+                ? `No products currently match the "${statusFilter}" filter.`
                 : 'Your catalog is empty. Click "Add Product" to create your first inventory item.'}
             </p>
-            {!search && (
+            {statusFilter !== 'all' && (
+              <button
+                onClick={() => setStatusFilter('all')}
+                className="mt-3 text-xs text-indigo-600 font-semibold hover:underline"
+              >
+                Clear Filter
+              </button>
+            )}
+            {!search && statusFilter === 'all' && (
               <button
                 onClick={handleOpenAdd}
                 className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
@@ -143,7 +239,7 @@ export default function Products({ onOpenAdjustStock, onOpenDeleteConfirm, toast
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {products.map((p) => {
+                {filteredProducts.map((p) => {
                   const isOutOfStock = p.quantityOnHand === 0;
                   const isLow = p.isLowStock;
 
@@ -249,4 +345,3 @@ export default function Products({ onOpenAdjustStock, onOpenDeleteConfirm, toast
     </div>
   );
 }
-

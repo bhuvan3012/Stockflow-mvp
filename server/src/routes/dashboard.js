@@ -15,22 +15,32 @@ router.get('/', async (req, res) => {
 
     const totalProducts = products.length;
     let totalQuantity = 0;
+    let totalValue = 0;
+    let totalCost = 0;
     const lowStockItems = [];
 
     products.forEach((product) => {
-      totalQuantity += product.quantityOnHand || 0;
+      const qty = product.quantityOnHand || 0;
+      totalQuantity += qty;
+
+      if (product.sellingPrice) {
+        totalValue += qty * product.sellingPrice;
+      }
+      if (product.costPrice) {
+        totalCost += qty * product.costPrice;
+      }
 
       const threshold =
         product.lowStockThreshold !== null && product.lowStockThreshold !== undefined
           ? product.lowStockThreshold
           : defaultThreshold;
 
-      if (product.quantityOnHand <= threshold) {
+      if (qty <= threshold) {
         lowStockItems.push({
           _id: product._id,
           name: product.name,
           sku: product.sku,
-          quantityOnHand: product.quantityOnHand,
+          quantityOnHand: qty,
           lowStockThreshold: threshold,
           sellingPrice: product.sellingPrice,
         });
@@ -47,6 +57,8 @@ router.get('/', async (req, res) => {
         totalProducts,
         totalQuantity,
         lowStockCount: lowStockItems.length,
+        totalValue: Number(totalValue.toFixed(2)),
+        totalCost: Number(totalCost.toFixed(2)),
       },
       lowStockItems,
     });

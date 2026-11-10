@@ -109,6 +109,12 @@ npm run seed
 | **Acme Retail Store** | `admin@acme.com` | `password123` | Demo products, low-stock items |
 | **Beta Logistics Corp** | `demo@beta.com` | `password123` | Demonstrates multi-tenant isolation |
 
+### 6. Run Automated Multi-Tenant Test Suite
+Execute the end-to-end verification suite verifying tenant boundaries, per-org SKU uniqueness, stock adjustments, and threshold calculation:
+```bash
+npm test
+```
+
 ---
 
 ##  Multi-Tenant Security & Isolation
